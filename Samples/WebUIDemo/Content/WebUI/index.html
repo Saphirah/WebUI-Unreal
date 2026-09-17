@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unreal Web UI</title>
+<script src="https://ue.local/__webui/webui.js"></script>
+<style>
+html,body { margin:0; background:transparent; font:16px system-ui,sans-serif; color:#eff5ff; }
+.panel { position:absolute; top:40px; left:40px; width:340px; padding:28px; background:#142235; border:1px solid #528caf; border-radius:18px; box-shadow:0 8px 28px #0005; }
+h1 { font-size:26px; margin:0 0 12px; } p { color:#b1c6dc; line-height:1.5; }
+button,input { font:inherit; padding:10px; border-radius:8px; margin:6px 0; } button { background:#83e6bf; cursor:pointer; border:0; }
+.orb { width:28px; height:28px; background:#83e6bf; border-radius:50%; animation:move 2s ease-in-out infinite alternate; }
+@keyframes move { to { transform:translateX(290px); background:#70bcff; } }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+</style></head><body><main class="panel"><div class="orb"></div><h1>Chromium in Unreal</h1>
+<p id="status">Connecting…</p><p>This panel receives browser input. The transparent area outside it passes clicks to Unreal.</p>
+<input id="text" value="Hello from HTML" aria-label="Message"><button id="send">JSON round trip</button><pre id="result"></pre>
+<canvas id="gl" width="32" height="32" style="width:32px;height:32px"></canvas></main>
+<script>
+ue.interface.setStatus = text => document.querySelector('#status').textContent = text;
+webui.ready.then(async () => {
+  const gl = document.querySelector('#gl').getContext('webgl2');
+  if (gl) { gl.clearColor(0.2,0.7,1,1); gl.clear(gl.COLOR_BUFFER_BIT); }
+  await ue5('ready', {javascript:true, webgl2:!!gl, userAgent:navigator.userAgent});
+  const echo = await webui.request('echo', {text:'世界', nested:[1,true,null]}, 5);
+  await ue5('roundtrip', echo);
+}).catch(error => document.querySelector('#status').textContent = error.message);
+document.querySelector('#send').onclick = async () => {
+  try { document.querySelector('#result').textContent = JSON.stringify(await webui.request('echo', {text:document.querySelector('#text').value, at:Date.now()}, 3), null, 2); }
+  catch (error) { document.querySelector('#result').textContent = error.message; }
+};
+</script></body></html>

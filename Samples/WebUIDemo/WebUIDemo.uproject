@@ -1,0 +1,7 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.7",
+  "AdditionalPluginDirectories": ["../../Plugins"],
+  "Plugins": [{"Name": "UnrealWebUI", "Enabled": true}],
+  "Modules": [{"Name": "WebUIDemo", "Type": "Runtime", "LoadingPhase": "Default"}]
+}

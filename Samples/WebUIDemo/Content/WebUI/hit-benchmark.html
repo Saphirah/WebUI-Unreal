@@ -1,0 +1,8 @@
+<!doctype html><html><head><style>
+html,body{margin:0;background:transparent;color:white;font-family:system-ui}
+.box{display:inline-block;width:75px;height:40px;margin:4px;background:#3458aa;animation:pulse 1s infinite alternate}
+@keyframes pulse{to{transform:translateY(5px);opacity:.6}}
+</style></head><body><h1>Hit-test IPC benchmark</h1><div id="root"></div><script>
+const root=document.getElementById('root');
+for(let i=0;i<120;i++){const e=document.createElement('button');e.className='box';e.textContent=i;root.appendChild(e)}
+</script></body></html>

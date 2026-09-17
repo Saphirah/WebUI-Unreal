@@ -1,0 +1,27 @@
+<!doctype html><html><head><script src="https://ue.local/__webui/webui.js"></script></head>
+<body><p id="text" style="user-select:text!important">Selection regression</p>
+<input id="field" value="Editable text"><div contenteditable="true" id="editable">Editable content</div>
+<script>
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+webui.ready.then(async () => {
+  for(let i=0;i<100 && !window.__webuiSelection;i++) await wait(50);
+  const results = {};
+  for(const id of ['text','field','editable']) {
+    const event = new Event('selectstart', {bubbles:true,cancelable:true});
+    document.getElementById(id).dispatchEvent(event);
+    results[id] = event.defaultPrevented;
+  }
+  const field = document.getElementById('field'); field.focus(); field.select();
+  await wait(50);
+  results.fieldCollapsed = field.selectionStart === field.selectionEnd;
+  const range = document.createRange(); range.selectNodeContents(document.getElementById('text'));
+  getSelection().removeAllRanges(); getSelection().addRange(range);
+  await wait(50); results.rangeCollapsed = getSelection().isCollapsed;
+  const key = new KeyboardEvent('keydown',{key:'a',ctrlKey:true,bubbles:true,cancelable:true});
+  field.dispatchEvent(key); results.selectAllBlocked = key.defaultPrevented;
+  const typing = new KeyboardEvent('keydown',{key:'x',bubbles:true,cancelable:true});
+  field.dispatchEvent(typing); results.typingAllowed = !typing.defaultPrevented;
+  results.pass = Object.values(results).every(Boolean);
+  ue5('selectionResult',results);
+});
+</script></body></html>

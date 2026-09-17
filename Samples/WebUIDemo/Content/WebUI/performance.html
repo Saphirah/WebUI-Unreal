@@ -1,0 +1,14 @@
+<!doctype html><html><head><script src="https://ue.local/__webui/webui.js"></script>
+<style>body{background:transparent;color:white}#box{width:100px;height:100px;background:coral;will-change:transform}</style></head>
+<body><h1>CEF frame delivery benchmark</h1><div id="box"></div><script>
+const box=document.getElementById('box');
+let times=[],measuring=false;
+function animate(t){box.style.transform=`translateX(${(t/4)%800}px)`;if(measuring)times.push(t);requestAnimationFrame(animate)}
+requestAnimationFrame(animate);
+ue.interface.measure=()=>{times=[];measuring=true;setTimeout(()=>{
+  measuring=false; const gaps=times.slice(1).map((t,i)=>t-times[i]).sort((a,b)=>a-b);
+  ue5('performanceResult',{rafHz:(times.length-1)*1000/(times.at(-1)-times[0]),
+    p95ms:gaps[Math.floor(gaps.length*.95)],frames:times.length,visibility:document.visibilityState});
+},10000)};
+webui.ready.then(()=>setTimeout(()=>ue5('performanceStart'),3000));
+</script></body></html>

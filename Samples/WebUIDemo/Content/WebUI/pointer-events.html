@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>DOM input regression</title>
+<script src="https://ue.local/__webui/webui.js"></script>
+<style>
+html,body { margin:0; background:transparent; font:16px system-ui; color:white; }
+#root { position:fixed; inset:0; }
+.case { position:absolute; left:50px; top:80px; width:200px; height:100px; }
+#decoration { background:#eb5488; pointer-events:none; }
+#transparent { background:transparent; border:0; color:transparent; --hovered:0; }
+#transparent:hover { --hovered:1; outline:3px solid #73ffc6; transition:outline-color .1s; }
+#underlay { background:#2678c0; }
+#cover { background:#ae65d4; pointer-events:none; z-index:2; }
+#parent { background:#a96a21; pointer-events:none; }
+#child { position:absolute; inset:20px; background:#73b285; pointer-events:auto; }
+#dynamic { background:#247cad; pointer-events:auto; }
+[hidden] { display:none !important; }
+h1 { position:absolute; left:30px; top:10px; margin:0; font-size:20px; pointer-events:none; }
+</style></head><body><div id="root"><h1>DOM pointer-events and hover regression</h1>
+<div id="decoration" class="case" hidden>Opaque decoration</div>
+<button id="transparent" class="case" aria-label="Transparent hover target" hidden></button>
+<button id="underlay" class="case" hidden>Underlying button</button><div id="cover" class="case" hidden>Noninteractive overlay</div>
+<div id="parent" class="case" hidden><button id="child">Interactive child</button></div>
+<div id="dynamic" class="case" hidden>Dynamic pointer events</div>
+</div><script>
+let current = 0, clicked = '', hovered = false;
+const cases = [
+  {ids:[],web:false},
+  {ids:['decoration'],web:false},
+  {ids:['transparent'],web:true,target:'transparent',hover:true},
+  {ids:['underlay','cover'],web:true,target:'underlay'},
+  {ids:['parent'],web:true,target:'child'},
+  {ids:['parent'],web:false,x:55,y:85},
+  {ids:['dynamic'],web:true,target:'dynamic'},
+  {ids:['dynamic'],web:false,none:true},
+  {ids:['dynamic'],web:true,target:'dynamic'},
+];
+document.addEventListener('pointerdown', e => { clicked = e.target.id; ue5('pointerDown', {id:clicked}); }, true);
+ue.interface.setStatus = () => {};
+ue.interface.prepareStep = step => {
+  current = step; clicked = ''; hovered = false;
+  for (const e of document.querySelectorAll('.case')) e.hidden = true;
+  const spec = cases[step];
+  for (const id of spec.ids) document.getElementById(id).hidden = false;
+  document.getElementById('dynamic').style.pointerEvents = spec.none ? 'none' : 'auto';
+  // Force a layout read after the style change, then ask native to move its virtual cursor.
+  const x = spec.x || 150, y = spec.y || 130;
+  ue5('domStep', {step, u:x/innerWidth, v:y/innerHeight, web:spec.web});
+};
+ue.interface.inspectStep = () => {
+  const spec = cases[current];
+  const target = spec.target && document.getElementById(spec.target);
+  const hoverOK = !spec.hover || (target.matches(':hover') && getComputedStyle(target).getPropertyValue('--hovered').trim() === '1');
+  const clickOK = spec.web ? clicked === spec.target : clicked === '';
+  ue5('domResult', {step:current, pass:hoverOK && clickOK, hovered:hoverOK, clicked});
+};
+webui.ready.then(() => {
+  // Exercise slow renderer replies: a short timeout must not starve hit testing.
+  const query = webui._queryHitTest;
+  webui._queryHitTest = (...args) => setTimeout(() => query(...args), 300);
+  ue5('ready', {domRegression:true});
+});
+</script></body></html>

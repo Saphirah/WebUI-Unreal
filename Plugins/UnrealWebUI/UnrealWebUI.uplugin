@@ -1,0 +1,14 @@
+{
+  "FileVersion": 3,
+  "Version": 2,
+  "VersionName": "0.2.0",
+  "FriendlyName": "Unreal Web UI",
+  "Description": "Chromium UI for UE 5.7+: D3D12 shared textures, UMG and JSON messaging.",
+  "Category": "UI",
+  "CanContainContent": true,
+  "SupportedTargetPlatforms": ["Win64"],
+  "PreBuildSteps": {
+    "Win64": ["powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"$(PluginDir)/Scripts/BuildHost.ps1\" -Engine \"$(RootDir)\" -TargetType \"$(TargetType)\""]
+  },
+  "Modules": [{"Name": "UnrealWebUI", "Type": "Runtime", "LoadingPhase": "Default", "PlatformAllowList": ["Win64"], "TargetDenyList": ["Server"]}]
+}

@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Incremental region A/B fixture</title>
+<script src="https://ue.local/__webui/webui.js"></script>
+<style>body{margin:0;background:transparent;color:white;font:14px sans-serif}.cell{position:absolute;width:28px;height:20px;background:#243755}.cell:hover{background:#ef9336}#moving{position:absolute;top:760px;width:80px;height:30px;background:#38bfad;animation:move 2s linear infinite alternate}@keyframes move{to{transform:translateX(900px)}}</style></head>
+<body><div id="root"></div><div id="moving"></div><script>
+const root=document.getElementById('root');for(let i=0;i<1200;i++){const e=document.createElement('div');e.className='cell';e.style.left=(i%48)*32+'px';e.style.top=Math.floor(i/48)*27+'px';root.appendChild(e);}
+</script></body></html>
