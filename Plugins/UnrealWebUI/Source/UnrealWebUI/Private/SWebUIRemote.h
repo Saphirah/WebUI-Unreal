@@ -4,6 +4,7 @@
 #include "Widgets/SViewport.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Application/IInputProcessor.h"
+#include "CoreGlobals.h"
 
 class FWebUIRemoteViewport : public ISlateViewport {
     TSharedRef<FWebUIRemoteSession,ESPMode::ThreadSafe> Session;
@@ -29,13 +30,27 @@ class SWebUIRemote : public SCompoundWidget {
     TSharedPtr<SViewport> Viewport;
     TSharedPtr<FWebUIRemoteViewport> Interface;
     class FMouseObserver : public IInputProcessor {
+        uint64 LastFrame = MAX_uint64;
+        FVector2D LastPosition = FVector2D::ZeroVector;
+        bool HasPosition = false;
     public:
         TWeakPtr<SWebUIRemote> Widget;
-        void Tick(const float,FSlateApplication&,TSharedRef<ICursor>) override{}
-        bool HandleMouseMoveEvent(FSlateApplication&,const FPointerEvent& E) override{
-            if(auto W=Widget.Pin()){const auto& G=W->GetCachedGeometry();const auto P=G.AbsoluteToLocal(E.GetScreenSpacePosition());const auto S=G.GetLocalSize();
-                W->Session->Mouse(P.X>=0&&P.Y>=0&&P.X<S.X&&P.Y<S.Y?TEXT("move"):TEXT("leave"),G,E);}
-            return false; // Observe hover even when the hit map routes input into Unreal.
+        void Tick(const float,FSlateApplication& App,TSharedRef<ICursor>) override{
+            if(LastFrame==GFrameCounter)return;
+            auto W=Widget.Pin();if(!W)return;
+            const auto& G=W->GetCachedGeometry();const auto S=G.GetLocalSize();
+            if(S.X<=0||S.Y<=0)return;
+            LastFrame=GFrameCounter;
+            // Sample the latest position once per game frame, including over click-through areas.
+            // Button/wheel events still carry their own position and are sent immediately.
+            const FVector2D Position=App.GetCursorPos();
+            const FPointerEvent E(0,Position,HasPosition?LastPosition:Position,
+                App.GetPressedMouseButtons(),EKeys::Invalid,0,App.GetModifierKeys());
+            const auto P=G.AbsoluteToLocal(Position);
+            const bool Inside=P.X>=0&&P.Y>=0&&P.X<S.X&&P.Y<S.Y;
+            // Captured drags must keep receiving moves even beyond the browser rectangle.
+            W->Session->Mouse(Inside||W->Viewport->HasMouseCapture()?TEXT("move"):TEXT("leave"),G,E);
+            LastPosition=Position;HasPosition=true;
         }
     };
     TSharedPtr<FMouseObserver> Observer;
